@@ -63,8 +63,26 @@ jobs:
             exit 1
           fi
 
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
       - name: Run tests
         run: ./mvnw -B test
 
       - name: Build project
         run: ./mvnw -B -DskipTests package
+
+      - name: Build Docker image
+        shell: bash
+        run: |
+          IMAGE_NAME="practica-pr:${{ github.event.pull_request.number }}"
+          docker build --file Dockerfile --tag "${IMAGE_NAME}" .
+
+      - name: Show Docker image size
+        shell: bash
+        run: |
+          IMAGE_NAME="practica-pr:${{ github.event.pull_request.number }}"
+          IMAGE_SIZE_BYTES="$(docker image inspect "${IMAGE_NAME}" --format='{{.Size}}')"
+          IMAGE_SIZE_MB="$(awk "BEGIN {printf \"%.2f\", ${IMAGE_SIZE_BYTES}/1024/1024}")"
+
+          echo "Docker image size: ${IMAGE_SIZE_BYTES} bytes (${IMAGE_SIZE_MB} MB)"
